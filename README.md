@@ -2,7 +2,7 @@
 
 Visuzlize go application source code.
 
-Example `[github.com/goda](https://github.com/loov/goda)`:
+Example `github.com/loov/goda`:
 ![Example](example-goda.png)
 
 ## Usage
