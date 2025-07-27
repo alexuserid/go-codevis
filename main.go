@@ -10,6 +10,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// TODO: refactor
+
 func main() {
 	log.Println("check environment")
 	if err := checkEnvironment(); err != nil {
@@ -25,7 +27,7 @@ func main() {
 	log.Println("build deps graph")
 	depsGraph, err := buildDepsGraph()
 	if err != nil {
-		log.Fatal("failed to build deps png:", err)
+		log.Fatal("failed to build deps graph:", err)
 	}
 
 	log.Println("paste deps to html")
@@ -139,27 +141,70 @@ func pasteDepsToHTML(treeHTML []byte, depsGraph []byte) ([]byte, error) {
 	if !ok {
 		svgHTML = string(depsGraph)
 	}
-	svgHTML = "<svg" + svgHTML
+	svgHTML = `<svg id="svg" style="overflow:visible" ` + svgHTML
 
 	htmlTableStart := `
 	<body>
+	<style>
+	#container {
+	  width: 75lvw;
+	  height: 90lvh;
+	  overflow: auto;
+	}
+	#tree-container {
+		width: 20lvw;
+		height: 90lvh;
+		overflow: auto;
+	  }
+	#svg {
+	  margin: 50px;
+	}
+ </style>
 	<table style="width=100%">
 		<tr>
-		  <th>Directory Tree</th>
+		  <th style="white-space:nowrap; overflow:scroll; position:sticky; left:0; background-color:white; opacity:80%; vertical-align:top;">Directory Tree</th>
 		  <th>Packange Dependecy Graph</th>
 		</tr>
 		<tr>
-		  <td style="white-space:nowrap; overflow:scroll; position:sticky; left:0; background-color:white; opacity:80%; vertical-align:top;">`
+		<td style="white-space:nowrap; overflow:scroll; position:sticky; left:0; background-color:white; opacity:80%; vertical-align:top;">
+		<div id="tree-container">`
 
 	htmlTableGraphPart := fmt.Sprintf(`
+	</div>
 	</td>
-  <td>
-	<div>
+  <td style="vertical-align:top;">
+	<div id="container">
 		%s
 	</div>
+	<button id="zoom-in">zoom in</button>
+	<button id="zoom-out">zoom out</button>
   </td>
 </tr>
-</table>`, svgHTML)
+</table>
+<script>
+const svg = document.querySelector('#svg');
+
+const btnZoomIn = document.querySelector('#zoom-in');
+const btnZoomOut = document.querySelector('#zoom-out');
+
+btnZoomIn.addEventListener('click', () => {
+	resize(1.1);
+});
+
+btnZoomOut.addEventListener('click', () => {
+	resize(0.9);
+});
+
+console.log("script inited");
+
+function resize(scale) {
+	console.log("resize");
+	let svgWidth = parseInt(svg.getAttribute('width'));
+	svg.setAttribute('width', `+"`${(svgWidth * scale)}`"+`);
+	let svgHeight = parseInt(svg.getAttribute('height'));
+	svg.setAttribute('height', `+"`${(svgHeight * scale)}`"+`);
+}
+</script>`, svgHTML)
 
 	stringHTML := string(treeHTML)
 
