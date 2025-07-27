@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/base64"
 	"fmt"
 	"log"
 	"net/http"
@@ -23,14 +22,14 @@ func main() {
 		log.Fatal("failed to build tree html:", err)
 	}
 
-	log.Println("build deps png")
-	depsPng, err := buildDepsPng()
+	log.Println("build deps graph")
+	depsGraph, err := buildDepsGraph()
 	if err != nil {
 		log.Fatal("failed to build deps png:", err)
 	}
 
 	log.Println("paste deps to html")
-	htmlPage, err := pasteDepsToHTML(treeHTML, depsPng)
+	htmlPage, err := pasteDepsToHTML(treeHTML, depsGraph)
 	if err != nil {
 		log.Fatal("failed to paste deps to html:", err)
 	}
@@ -79,7 +78,7 @@ func buildTreeHTML() (page []byte, err error) {
 	return data, nil
 }
 
-func buildDepsPng() (png []byte, err error) {
+func buildDepsGraph() ([]byte, error) {
 	log.Println("gather dependencies")
 	cmdGoda := exec.Command("goda")
 	if cmdGoda.Err != nil {
@@ -105,6 +104,7 @@ func buildDepsPng() (png []byte, err error) {
 	},
 	)
 
+	var image []byte
 	eg.Go(func() error {
 		log.Println("generate dependency graph")
 		cmdGraphviz := exec.Command("dot")
@@ -112,10 +112,10 @@ func buildDepsPng() (png []byte, err error) {
 			return fmt.Errorf("command graphviz: %w", cmdGraphviz.Err)
 		}
 
-		cmdGraphviz.Args = append(cmdGraphviz.Args, "-Tpng")
+		cmdGraphviz.Args = append(cmdGraphviz.Args, "-T", "svg")
 		cmdGraphviz.Stdin = godaOutputReader
 
-		png, err = cmdGraphviz.Output()
+		image, err = cmdGraphviz.Output()
 		if err != nil {
 			return fmt.Errorf("graphviz output: %w", err)
 		}
@@ -131,10 +131,16 @@ func buildDepsPng() (png []byte, err error) {
 		return nil, fmt.Errorf("failed errgroup: %w", err)
 	}
 
-	return png, nil
+	return image, nil
 }
 
-func pasteDepsToHTML(treeHTML []byte, depsPng []byte) ([]byte, error) {
+func pasteDepsToHTML(treeHTML []byte, depsGraph []byte) ([]byte, error) {
+	_, svgHTML, ok := strings.Cut(string(depsGraph), "<svg")
+	if !ok {
+		svgHTML = string(depsGraph)
+	}
+	svgHTML = "<svg" + svgHTML
+
 	htmlTableStart := `
 	<body>
 	<table style="width=100%">
@@ -143,17 +149,17 @@ func pasteDepsToHTML(treeHTML []byte, depsPng []byte) ([]byte, error) {
 		  <th>Packange Dependecy Graph</th>
 		</tr>
 		<tr>
-		  <td style="white-space:nowrap; overflow:scroll; position:sticky; left:0; width:30%; background-color:white; opacity:80%">`
+		  <td style="white-space:nowrap; overflow:scroll; position:sticky; left:0; background-color:white; opacity:80%; vertical-align:top;">`
 
-	htmlTablePNGPart := fmt.Sprintf(`
+	htmlTableGraphPart := fmt.Sprintf(`
 	</td>
   <td>
 	<div>
-  		<img src="data:image/png;base64, %s">
+		%s
 	</div>
   </td>
 </tr>
-</table>`, base64.StdEncoding.EncodeToString(depsPng))
+</table>`, svgHTML)
 
 	stringHTML := string(treeHTML)
 
@@ -171,7 +177,7 @@ func pasteDepsToHTML(treeHTML []byte, depsPng []byte) ([]byte, error) {
 	stringHTML = strings.Replace(
 		stringHTML,
 		"</body>",
-		htmlTablePNGPart,
+		htmlTableGraphPart,
 		1,
 	)
 
