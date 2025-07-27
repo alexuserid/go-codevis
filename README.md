@@ -1,4 +1,4 @@
-# go-srcvis
+# go-codevis
 
 Visuzlize go application source code.
 
@@ -8,11 +8,11 @@ Example `github.com/loov/goda`:
 ## Usage
 Install:
 ```bash
-go install github.com/alexuserid/go-srcvis
+go install github.com/alexuserid/go-codevis
 ```
 
 Usage:
 ```bash
 cd ~/go/src/github.com/my-go-repository
-go-srcvis
+go-codevis
 ```

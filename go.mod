@@ -1,8 +1,11 @@
-module github.com/alexuserid/go-srcvis
+module github.com/alexuserid/go-codevis
 
 go 1.24.5
 
-require github.com/stretchr/testify v1.10.0
+require (
+	github.com/stretchr/testify v1.10.0
+	golang.org/x/sync v0.16.0
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

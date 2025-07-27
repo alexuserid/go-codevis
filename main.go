@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os/exec"
 	"strings"
+
+	"golang.org/x/sync/errgroup"
 )
 
 func main() {
@@ -91,28 +93,43 @@ func buildDepsPng() (png []byte, err error) {
 		return nil, fmt.Errorf("command stdout pipe: %w", err)
 	}
 
-	go func() {
+	// Async is needed to pipe goda output to graphviz
+	eg := errgroup.Group{}
+	eg.Go(func() error {
 		err := cmdGoda.Run()
 		if err != nil {
-			log.Fatal("cmd goda run:", err)
+			return fmt.Errorf("cmd goda run: %w", err)
 		}
-	}()
 
-	log.Println("generate dependency graph")
-	cmdGraphviz := exec.Command("dot")
-	if cmdGraphviz.Err != nil {
-		return nil, fmt.Errorf("command graphviz: %w", cmdGraphviz.Err)
-	}
+		return nil
+	},
+	)
 
-	cmdGraphviz.Args = append(cmdGraphviz.Args, "-Tpng")
-	cmdGraphviz.Stdin = godaOutputReader
+	eg.Go(func() error {
+		log.Println("generate dependency graph")
+		cmdGraphviz := exec.Command("dot")
+		if cmdGraphviz.Err != nil {
+			return fmt.Errorf("command graphviz: %w", cmdGraphviz.Err)
+		}
 
-	png, err = cmdGraphviz.Output()
+		cmdGraphviz.Args = append(cmdGraphviz.Args, "-Tpng")
+		cmdGraphviz.Stdin = godaOutputReader
+
+		png, err = cmdGraphviz.Output()
+		if err != nil {
+			return fmt.Errorf("graphviz output: %w", err)
+		}
+
+		log.Println("dependency graph generated")
+
+		return nil
+	},
+	)
+
+	err = eg.Wait()
 	if err != nil {
-		return nil, fmt.Errorf("graphviz output: %w", err)
+		return nil, fmt.Errorf("failed errgroup: %w", err)
 	}
-
-	log.Println("dependency graph generated")
 
 	return png, nil
 }
@@ -120,17 +137,21 @@ func buildDepsPng() (png []byte, err error) {
 func pasteDepsToHTML(treeHTML []byte, depsPng []byte) ([]byte, error) {
 	htmlTableStart := `
 	<body>
-	<table>
+	<table style="width=100%">
 		<tr>
 		  <th>Directory Tree</th>
 		  <th>Packange Dependecy Graph</th>
 		</tr>
 		<tr>
-		  <td style="white-space:nowrap; overflow:auto; position:fixed">`
+		  <td style="white-space:nowrap; overflow:scroll; position:sticky; left:0; width:30%; background-color:white; opacity:80%">`
 
 	htmlTablePNGPart := fmt.Sprintf(`
 	</td>
-  <td><img src="data:image/png;base64, %s"></td>
+  <td>
+	<div>
+  		<img src="data:image/png;base64, %s">
+	</div>
+  </td>
 </tr>
 </table>`, base64.StdEncoding.EncodeToString(depsPng))
 
