@@ -247,9 +247,9 @@ document.addEventListener('DOMContentLoaded', () => {
 		animationDuration: 300
 	});
 
+    // TODO: refactor code below.
+
 	// Gather all graph nodes to match them with tree nodes.
-	// This is dirty hacks because I used 'tree' util to generate inital html.
-	// When there will be native go tree generation, this code will be or refactored.
 	var graphNodes = document.querySelectorAll('g[class="node"]');
 	var nodeTitles = {};
 	for (var i = 0; i < graphNodes.length; i++) {
@@ -259,30 +259,23 @@ document.addEventListener('DOMContentLoaded', () => {
 	}
 
 	// Create map with [tree node id] graph node id
-	var anchors = document.getElementsByTagName('a');
+    var anchors = document.getElementsByClassName("tree-entry")
 	var treeGraphMap = {};
 	for (var i = 0; i < anchors.length; i++) {
 		const anchor = anchors[i];
-		if (anchor.className == "DIR") {
-			relativePackagePath = anchor.getAttribute('href').slice(1, -1);
-			anchor.removeAttribute('href')
-			anchor.setAttribute('id', relativePackagePath)
+        const relativePackagePath = anchor.id
+        for (const packagePath in nodeTitles) {
+            if (packagePath.endsWith(relativePackagePath)) {
+                const nodeID = nodeTitles[packagePath];
+                treeGraphMap[relativePackagePath] = nodeID
 
-			found = false;
-			for (const packagePath in nodeTitles) {
-				if (packagePath.endsWith(relativePackagePath)) {
-					const nodeID = nodeTitles[packagePath];
-					treeGraphMap[anchor.id] = nodeID
-
-					found = true;
-					
-					break;
-				}
-			}
-		}
+                break;
+            }
+        }
 	}
 
 	// Set element tree click action - zoom and highlight
+    var anchors = document.getElementsByClassName("tree-entry")
 	for (var i = 0; i < anchors.length; i++) {
 		const anchor = anchors[i];
 		anchor.onclick = function() {
@@ -290,9 +283,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			graphNode = document.getElementById(graphNodeID);
 			if (!graphNode) {
-				// For a while print alert. Later create differen color
-				// for simple directories (not packages).
-				alert(`${anchor.id}` + "is not a package");
 				return;
 			}
 			zoomController.zoomToElement(graphNode);

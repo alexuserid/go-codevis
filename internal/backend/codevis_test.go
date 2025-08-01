@@ -172,7 +172,7 @@ const expectedTreeHTML = `
 
 // TODO: fix test
 func TestPasteDepsToHTML(t *testing.T) {
-	htmlPage, err := pasteDepsToHTML([]byte(inputTreeHTML), []byte("aaa"))
+	htmlPage, err := pasteDepsToHTML(inputTreeHTML, []byte("aaa"))
 	assert.NoError(t, err)
 
 	want := expectedTreeHTML
