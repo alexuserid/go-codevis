@@ -158,17 +158,18 @@ func pasteDepsToHTML(treeHTML []byte, depsGraph []byte) ([]byte, error) {
 	// Add id to identify later.
 	svgHTML = `<svg id="svg" ` + svgHTML
 
-	// Overflow:auto allows to fit tree and graph with scroll
+	// Overflow:auto allows to fit tree with scroll
+	// Overflow: hidden hides graph scroll bar. All scrolling made using JS.
 	// to viewports with desired width and height.
 	// White-space:nowrap tells not to wrap words, makes tree more readable.
 	// Vertical-align: top was needed to place content on top, not in the center of row.
 	htmlTableStart := `
 	<body>
 	<style>
-	#container {
+	.svg-container {
 	  width: 75lvw;
 	  height: 90lvh;
-	  overflow: auto;
+	  overflow: hidden;
 	}
 	#tree-container {
 		width: 20lvw;
@@ -189,11 +190,14 @@ func pasteDepsToHTML(treeHTML []byte, depsGraph []byte) ([]byte, error) {
 	</div>
 	</td>
   <td style="vertical-align:top;">
-	<div id="container">
+	<div class="svg-container" id="svgContainer">
 		%s
 	</div>
-	<button id="zoom-in">zoom in</button>
-	<button id="zoom-out">zoom out</button>
+    <div class="zoom-controls">
+        <button id="resetZoom">Reset Zoom</button>
+        <button id="zoomIn">Zoom In (+)</button>
+        <button id="zoomOut">Zoom Out (-)</button>
+    </div>
   </td>
 </tr>
 </table>
