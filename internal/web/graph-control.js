@@ -15,7 +15,7 @@ class SVGZoomController {
 		this.initialViewBox = this.parseViewBox(this.svg.getAttribute('viewBox'));
 		this.currentViewBox = {...this.initialViewBox};
 		this.zoomFactor = options.zoomFactor || 1.5;
-        this.trackPadZoomFactor = 1.1;
+        this.slowZoomFactor = 1.05;
 		this.zoomLevel = 0;
 		this.animationDuration = options.animationDuration || 300;
 		
@@ -56,6 +56,10 @@ class SVGZoomController {
                 
         // Mouse wheel pan
         this.container.addEventListener('wheel', this.handleWheel.bind(this), { passive: false });
+
+        // Wheel zoom
+        this.container.addEventListener('DOMMouseScroll', this.handleScroll, false); // for Firefox
+        this.container.addEventListener('mousewheel', this.handleScroll, false); // for everyone else
                 
         // Cursor change on pan
         this.svg.style.cursor = 'grab';
@@ -91,21 +95,24 @@ class SVGZoomController {
         this.svg.style.cursor = 'grab';
         e.preventDefault();
     }
+
+    handleScroll(e) {
+        var direction = (e.detail<0 || e.wheelDelta>0) ? 1 : -1;
+        const zoomPoint = this.getSVGPoint(e.clientX, e.clientY);
+
+        if (direction > 0) {
+            this.zoomToPoint(zoomPoint.x, zoomPoint.y, 1 / this.slowZoomFactor);
+        } else if (direction < 0) {
+            this.zoomToPoint(zoomPoint.x, zoomPoint.y, this.slowZoomFactor);
+        }
+
+        e.preventDefault();
+    };
     
     handleWheel(e) {
         if (e.ctrlKey) {
             // Scale with wheel on pressed Ctrl
-            let zoomFactor = this.isMacOS() ? this.trackPadZoomFactor : this.zoomFactor
-            const delta = e.deltaY > 0 ? -1 : 1;
-            const zoomPoint = this.getSVGPoint(e.clientX, e.clientY);
-            
-            if (delta > 0) {
-                this.zoomToPoint(zoomPoint.x, zoomPoint.y, 1 / zoomFactor);
-            } else if (delta < 0) {
-                this.zoomToPoint(zoomPoint.x, zoomPoint.y, zoomFactor);
-            }
-            
-            e.preventDefault();
+            this.handleScroll(e)
         } else {
             // Simple wheel pan
             const panSpeed = 0.5;
@@ -227,12 +234,6 @@ class SVGZoomController {
         const {x, y, width, height} = this.currentViewBox;
         this.svg.setAttribute('viewBox', `${x} ${y} ${width} ${height}`);
     }
-
-    isMacOS() {
-        if (macosPlatforms.indexOf(platform) !== -1) {
-            return true
-        }
-    }
 }
 
 
@@ -298,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 			polygon = graphNode.getElementsByTagName("polygon")[0];
 			originFill = polygon.getAttribute("fill");
-			polygon.setAttribute("fill", "red");
+			polygon.setAttribute("fill", "#FACDEE");
 
 			setTimeout(() => {
 				polygon.setAttribute("fill", originFill);
