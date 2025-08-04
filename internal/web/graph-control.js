@@ -321,7 +321,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const node = nodes[i]
         const link = node.getElementsByTagName("a");
 
-        // Remove click action
-        link[0].removeAttribute("xlink:href")
+        // Click action leads to go-callvis page
+        const gopkgPath = link[0].getAttribute("xlink:title")
+        link[0].setAttribute("xlink:href", "http://localhost:7878/?f=" + gopkgPath)
     }
 });

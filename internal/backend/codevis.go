@@ -2,6 +2,7 @@ package backend
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,8 +16,6 @@ import (
 	"github.com/alexuserid/go-codevis/internal/backend/tree"
 	"github.com/alexuserid/go-codevis/internal/web"
 )
-
-// TODO: refactor
 
 func Run() error {
 	log.Println("check environment")
@@ -42,6 +41,12 @@ func Run() error {
 		return fmt.Errorf("compose html: %w", err)
 	}
 
+	log.Println("start go-callvis server")
+	err = launchGoCallvis()
+	if err != nil {
+		return fmt.Errorf("launch go-callvis: %w", err)
+	}
+
 	log.Println("hosting. visit http://localhost:9798")
 	err = http.ListenAndServe(":9798", http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
@@ -65,6 +70,29 @@ func checkEnvironment() error {
 		return fmt.Errorf("lookup 'dot' util, graphviz: %w", cmd.Err)
 	}
 
+	cmd = exec.CommandContext(context.Background(), "go-callvis")
+	if cmd.Err != nil {
+		return fmt.Errorf("lookup 'go-callvis' util https://github.com/ondrajz/go-callvis: %w", cmd.Err)
+	}
+
+	return nil
+}
+
+func launchGoCallvis() error {
+	cmdGoCallvis := exec.CommandContext(context.Background(), "go-callvis")
+
+	cmdGoCallvis.Args = append(cmdGoCallvis.Args, "-group", "pkg,type", "-nostd", "-skipbrowser", "./")
+	if cmdGoCallvis.Err != nil {
+		return fmt.Errorf("command go-callvis: %w", cmdGoCallvis.Err)
+	}
+
+	cmdGoCallvis.Stdout = os.Stdout
+	cmdGoCallvis.Stderr = os.Stderr
+
+	err := cmdGoCallvis.Start()
+	if err != nil {
+		return fmt.Errorf("start go-callvis: %w", err)
+	}
 	return nil
 }
 
