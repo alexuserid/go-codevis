@@ -6,8 +6,6 @@ svgCnvs.removeAttribute('height')
 
 // This class allows to zoom in to graph node on tree element click.
 // it works almost good, but there's a lot of things to do:
-const macosPlatforms = ["Macintosh", "MacIntel", "MacPPC", "Mac68K"];
-const platform = window.navigator?.userAgentData?.platform || window.navigator.platform;
 class SVGZoomController {
 	constructor(svgElement, containerElement, options = {}) {
 		this.svg = svgElement;
@@ -15,6 +13,7 @@ class SVGZoomController {
 		this.initialViewBox = this.parseViewBox(this.svg.getAttribute('viewBox'));
 		this.currentViewBox = {...this.initialViewBox};
 		this.zoomFactor = options.zoomFactor || 1.5;
+        this.zoomElementFactor = options.zoomElementFactor || options.zoomFactor || 1.5;
         this.slowZoomFactor = 1.05;
 		this.zoomLevel = 0;
 		this.animationDuration = options.animationDuration || 300;
@@ -35,7 +34,8 @@ class SVGZoomController {
 	init() {
         // Handle keyboard: + and -
         document.addEventListener('keydown', (e) => {
-            if (e.key == "+") {
+            // + and = are on the same key
+            if (e.key == "+" || e.key == "=") {
                 this.zoomIn()
             }
             if (e.key == "-") {
@@ -184,20 +184,20 @@ class SVGZoomController {
         const centerX = bbox.x + bbox.width / 2;
         const centerY = bbox.y + bbox.height / 2;
         
-        this.zoomToPoint(centerX, centerY, 1 / this.zoomFactor);
+        this.zoomToPoint(centerX, centerY, 1 / this.zoomElementFactor);
         this.adjustScrollPosition(bbox);
     }
     
     adjustScrollPosition(bbox) {
-        // Получаем позицию элемента относительно контейнера
+        // Get element position relative to container
         const svgRect = this.svg.getBoundingClientRect();
         const containerRect = this.container.getBoundingClientRect();
         
-        // Вычисляем центр элемента
+        // Calculate element center
         const elementCenterX = bbox.x + bbox.width / 2;
         const elementCenterY = bbox.y + bbox.height / 2;
         
-        // Преобразуем SVG координаты в координаты viewport
+        // Convert SVG coordinates to viewport coordinates
         const viewBox = this.currentViewBox;
         const scaleX = svgRect.width / viewBox.width;
         const scaleY = svgRect.height / viewBox.height;
@@ -205,11 +205,11 @@ class SVGZoomController {
         const viewportX = (elementCenterX - viewBox.x) * scaleX;
         const viewportY = (elementCenterY - viewBox.y) * scaleY;
         
-        // Вычисляем новые позиции скролла
+        // Calculate new scroll bar positions
         const targetScrollLeft = viewportX + svgRect.left - containerRect.left - containerRect.width / 2;
         const targetScrollTop = viewportY + svgRect.top - containerRect.top - containerRect.height / 2;
         
-        // Плавно скроллим к нужной позиции
+        // Smooth scroll to desired position
         this.container.scrollTo({
             left: targetScrollLeft,
             top: targetScrollTop,
@@ -222,7 +222,7 @@ class SVGZoomController {
         this.updateViewBox();
         this.zoomLevel = 0;
         
-        // Сброс скролла к началу
+        // Reset scroll to begining
         this.container.scrollTo({
             top: 0,
             left: 0,
@@ -236,6 +236,17 @@ class SVGZoomController {
     }
 }
 
+// Need to zoom to the same scale for any svg size.
+function calculateZoomFactor(svg) {
+    const svgWidth = svg.getBBox().width;
+    // Found 0.0008 empirically
+    let factor = svgWidth * 0.0008
+    if (factor < 1) {
+        factor = 1
+    }
+    return factor
+}
+
 
 // Init after DOM loaded
 document.addEventListener('DOMContentLoaded', () => {
@@ -243,7 +254,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	const svg = document.getElementById('svg');
 	const container = document.getElementById('svgContainer');
 	const zoomController = new SVGZoomController(svg, container, {
-		zoomFactor: 2,
+		zoomFactor: 1.5,
+        zoomElementFactor: calculateZoomFactor(svg),
 		animationDuration: 300
 	});
 
@@ -279,21 +291,34 @@ document.addEventListener('DOMContentLoaded', () => {
 	for (var i = 0; i < anchors.length; i++) {
 		const anchor = anchors[i];
 		anchor.onclick = function() {
-			graphNodeID = treeGraphMap[anchor.id];
+			const graphNodeID = treeGraphMap[anchor.id];
 
-			graphNode = document.getElementById(graphNodeID);
+			const graphNode = document.getElementById(graphNodeID);
 			if (!graphNode) {
 				return;
 			}
 			zoomController.zoomToElement(graphNode);
 
-			polygon = graphNode.getElementsByTagName("polygon")[0];
-			originFill = polygon.getAttribute("fill");
+			const polygon = graphNode.getElementsByTagName("polygon")[0];
 			polygon.setAttribute("fill", "#FACDEE");
 
+			const text = graphNode.getElementsByTagName("text")[0];
+			text.setAttribute("font-size", 14);
+
 			setTimeout(() => {
-				polygon.setAttribute("fill", originFill);
-			  }, "1000");
+				polygon.setAttribute("fill", "none");
+                text.setAttribute("font-size", 10);
+			  }, "3000");
 		};
 	}
+
+    // TODO: remove this after native graph generate
+    const nodes = document.getElementsByClassName("node")
+    for (var i = 0; i < nodes.length; i++) {
+        const node = nodes[i]
+        const link = node.getElementsByTagName("a");
+
+        // Remove click action
+        link[0].removeAttribute("xlink:href")
+    }
 });

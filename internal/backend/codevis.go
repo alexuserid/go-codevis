@@ -181,10 +181,11 @@ func pasteDepsToHTML(treeHTML string, depsGraph []byte) ([]byte, error) {
 	htmlTableStart := `
 	<body>
 	<style type="text/css">
-    .tree {
+    body {
         font-family : monospace, sans-serif;
         color: black;
     }
+
     .gopkg {
         color: #4caeb8;
         cursor: pointer;
