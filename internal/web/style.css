@@ -1,0 +1,32 @@
+body {
+    font-family : monospace, sans-serif;
+    color: black;
+}
+
+table {
+    width: 100%;
+}
+
+.gopkg {
+    color: #4caeb8;
+    cursor: pointer;
+}
+
+.tree-column {
+    white-space: nowrap; /* Do not wrap words, makes tree more readable */
+    overflow:auto; /* Allows to fit tree with scroll */
+    vertical-align:top; /* Needed to place content on top, not in the center of row */
+}
+
+.svg-container {
+  width: 75lvw;
+  height: 90lvh;
+  overflow: hidden; /* Hides graph scroll bar. All scrolling made using JS */
+}
+
+#tree-container {
+    white-space: nowrap;
+    width: 20lvw;
+    height: 90lvh;
+    overflow: auto;
+}

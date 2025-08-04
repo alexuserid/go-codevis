@@ -1,12 +1,11 @@
-// For wider picture angle
-// TODO: maybe remove
+// For initial wide angle
 svgCnvs = document.getElementById('svg')
 svgCnvs.removeAttribute('width')
 svgCnvs.removeAttribute('height')
 
 // This class allows to zoom in to graph node on tree element click.
 // it works almost good, but there's a lot of things to do:
-class SVGZoomController {
+class SVGViewController {
 	constructor(svgElement, containerElement, options = {}) {
 		this.svg = svgElement;
 		this.container = containerElement;
@@ -174,7 +173,7 @@ class SVGZoomController {
         // Otherwise next zoom will be weird.
 		this.resetZoom();
         
-        const bbox = element.getBBox();
+        let bbox = element.getBBox();
         // GraphViz nodes have negative Y. But if we sustract modulus Y from the height,
 		// we obtain desired positive value.
         if (bbox.y < 0) {
@@ -192,6 +191,11 @@ class SVGZoomController {
         // Get element position relative to container
         const svgRect = this.svg.getBoundingClientRect();
         const containerRect = this.container.getBoundingClientRect();
+
+        // Negative Y causes non-idempotent scroll to element.
+        if (svgRect.y < 0) {
+            svgRect.y = svgRect.height + svgRect.y
+        }
         
         // Calculate element center
         const elementCenterX = bbox.x + bbox.width / 2;
@@ -247,13 +251,12 @@ function calculateZoomFactor(svg) {
     return factor
 }
 
-
 // Init after DOM loaded
 document.addEventListener('DOMContentLoaded', () => {
 	// Init zoomer
 	const svg = document.getElementById('svg');
 	const container = document.getElementById('svgContainer');
-	const zoomController = new SVGZoomController(svg, container, {
+	const zoomController = new SVGViewController(svg, container, {
 		zoomFactor: 1.5,
         zoomElementFactor: calculateZoomFactor(svg),
 		animationDuration: 300

@@ -1,6 +1,6 @@
 # go-codevis
 
-Visuzlize go application source code.
+Visualize go application source code.
 
 Example `github.com/loov/goda`:
 ![Example](example-goda.png)

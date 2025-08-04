@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net/http"
@@ -8,7 +9,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"golang.org/x/sync/errgroup"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 
 	"github.com/alexuserid/go-codevis/internal/backend/tree"
 	"github.com/alexuserid/go-codevis/internal/web"
@@ -34,14 +36,14 @@ func Run() error {
 		return fmt.Errorf("build dependency graph: %w", err)
 	}
 
-	log.Println("paste deps to html")
-	htmlPage, err := pasteDepsToHTML(treeHTML, depsGraph)
+	log.Println("create html")
+	htmlPage, err := composeHTML(treeHTML, depsGraph)
 	if err != nil {
-		return fmt.Errorf("parse dependencies to html: %w", err)
+		return fmt.Errorf("compose html: %w", err)
 	}
 
-	log.Println("hosting. visit http://localhost:8080")
-	err = http.ListenAndServe(":8080", http.HandlerFunc(
+	log.Println("hosting. visit http://localhost:9798")
+	err = http.ListenAndServe(":9798", http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			w.Write(htmlPage)
 		}))
@@ -66,26 +68,8 @@ func checkEnvironment() error {
 	return nil
 }
 
-func basicHTML() string {
-	return `
-<!DOCTYPE html>
-<html>
-<head>
- <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
- <title>Directory Tree</title>
-</head>
-<body>
-	<h1>Directory Tree</h1><p>
-    <div class="tree">
-    %s
-    </div>
-</body>
-</html>
-	`
-}
-
-// buildTreeHTML generates directory tree and basic html page.
-func buildTreeHTML() (page string, err error) {
+// buildTreeHTML generates directory tree html.
+func buildTreeHTML() (string, error) {
 	currentDirTree, err := tree.BuildTree(".", false)
 	if err != nil {
 		return "", fmt.Errorf("build tree: %w", err)
@@ -96,162 +80,59 @@ func buildTreeHTML() (page string, err error) {
 		return "", fmt.Errorf("tree to html: %w", err)
 	}
 
-	basic := basicHTML()
-	treeHTML := fmt.Sprintf(basic, string(data))
-
-	return treeHTML, nil
+	return string(data), nil
 }
 
-func buildDepsGraph() ([]byte, error) {
+func buildDepsGraph() (string, error) {
 	log.Println("gather dependencies")
 	cmdGoda := exec.Command("goda")
 	if cmdGoda.Err != nil {
-		return nil, fmt.Errorf("command goda: %w", cmdGoda.Err)
+		return "", fmt.Errorf("command goda: %w", cmdGoda.Err)
 	}
 
 	cmdGoda.Args = append(cmdGoda.Args, "graph", "-cluster", "-short", "./...:mod")
 
-	godaOutputReader, err := cmdGoda.StdoutPipe()
+	b, err := cmdGoda.Output()
 	if err != nil {
-		return nil, fmt.Errorf("command stdout pipe: %w", err)
+		return "", fmt.Errorf("goda output: %w", err)
 	}
 
-	// Async is needed to pipe goda output to graphviz
-	eg := errgroup.Group{}
-	eg.Go(func() error {
-		err := cmdGoda.Run()
-		if err != nil {
-			return fmt.Errorf("cmd goda run: %w", err)
-		}
+	buf := bytes.NewBuffer(b)
 
-		return nil
-	},
-	)
-
-	var image []byte
-	eg.Go(func() error {
-		log.Println("generate dependency graph")
-		cmdGraphviz := exec.Command("dot")
-		if cmdGraphviz.Err != nil {
-			return fmt.Errorf("command graphviz: %w", cmdGraphviz.Err)
-		}
-
-		cmdGraphviz.Args = append(cmdGraphviz.Args, "-T", "svg")
-		cmdGraphviz.Stdin = godaOutputReader
-		// TODO: why not return in error? Same for other commands.
-		cmdGraphviz.Stderr = os.Stderr
-
-		output, err := cmdGraphviz.Output()
-		if err != nil {
-			return fmt.Errorf("graphviz output '%s': %w", string(output), err)
-		}
-
-		image = output
-
-		log.Println("dependency graph generated")
-
-		return nil
-	},
-	)
-
-	err = eg.Wait()
-	if err != nil {
-		return nil, fmt.Errorf("failed errgroup: %w", err)
+	log.Println("generate dependency graph")
+	cmdGraphviz := exec.Command("dot")
+	if cmdGraphviz.Err != nil {
+		return "", fmt.Errorf("command graphviz: %w", cmdGraphviz.Err)
 	}
 
-	return image, nil
-}
+	cmdGraphviz.Args = append(cmdGraphviz.Args, "-T", "svg")
+	cmdGraphviz.Stdin = buf
+	cmdGraphviz.Stderr = os.Stderr
 
-func pasteDepsToHTML(treeHTML string, depsGraph []byte) ([]byte, error) {
+	image, err := cmdGraphviz.Output()
+	if err != nil {
+		return "", fmt.Errorf("graphviz output '%s': %w", string(image), err)
+	}
+
+	log.Println("dependency graph generated")
+
 	// Cut everything before <svg> tag since graphviz generates some basic html elements.
-	// We already have basic html in page.
-	// We already have basic html in page.
-	_, svgHTML, ok := strings.Cut(string(depsGraph), "<svg")
+	// We already have basic html.
+	_, svgHTML, ok := strings.Cut(string(image), "<svg")
 	if !ok {
-		svgHTML = string(depsGraph)
+		svgHTML = string(image)
 	}
 	// Add id to identify later.
 	svgHTML = `<svg id="svg" ` + svgHTML
 
-	// Overflow:auto allows to fit tree with scroll
-	// Overflow: hidden hides graph scroll bar. All scrolling made using JS.
-	// to viewports with desired width and height.
-	// White-space:nowrap tells not to wrap words, makes tree more readable.
-	// Vertical-align: top was needed to place content on top, not in the center of row.
-	htmlTableStart := `
-	<body>
-	<style type="text/css">
-    body {
-        font-family : monospace, sans-serif;
-        color: black;
-    }
+	return svgHTML, nil
+}
 
-    .gopkg {
-        color: #4caeb8;
-        cursor: pointer;
-    }
-	.svg-container {
-	  width: 75lvw;
-	  height: 90lvh;
-	  overflow: hidden;
-	}
-	#tree-container {
-		width: 20lvw;
-		height: 90lvh;
-		overflow: auto;
-	  }
- </style>
-	<table style="width=100%">
-		<tr>
-		  <th style="white-space:nowrap; overflow:auto; vertical-align:top;">Directory Tree</th>
-		  <th>Packange Dependecy Graph</th>
-		</tr>
-		<tr>
-		<td style="white-space:nowrap; overflow:auto; vertical-align:top;">
-		<div id="tree-container">`
+func composeHTML(treeHTML string, graphHTML string) ([]byte, error) {
+	p := message.NewPrinter(language.English)
 
-	htmlTableGraphPart := fmt.Sprintf(`
-	</div>
-	</td>
-  <td style="vertical-align:top;">
-	<div class="svg-container" id="svgContainer">
-		%s
-	</div>
-    <div class="zoom-controls">
-        <button id="resetZoom">Reset Zoom</button>
-        <button id="zoomIn">Zoom In (+)</button>
-        <button id="zoomOut">Zoom Out (-)</button>
-    </div>
-  </td>
-</tr>
-</table>
-<script>
-%s
-</script>`, svgHTML, web.GraphControlJS)
+	p.Printf("compose html. tree size: '%d', graph size: '%d'\n", len(treeHTML), len(graphHTML))
+	rendered := fmt.Sprintf(web.BasicHTML, web.Style, treeHTML, graphHTML, web.JS)
 
-	stringHTML := string(treeHTML)
-
-	// Remove needless elements from 'tree' html output.
-	// Will be redundant when use template or something like that.
-	stringHTML = strings.Replace(stringHTML, "<h1>Directory Tree</h1>", "", 1)
-	stringHTML = strings.Replace(stringHTML, "<p>", "", 1)
-	stringHTML = strings.Replace(stringHTML, `<\p>`, "", 1)
-
-	// Paste page style block and tree style block
-	stringHTML = strings.Replace(
-		stringHTML,
-		"<body>",
-		htmlTableStart,
-		1,
-	)
-
-	// Paste graph html
-	stringHTML = strings.Replace(
-		stringHTML,
-		"</body>",
-		htmlTableGraphPart,
-		1,
-	)
-
-	return []byte(stringHTML), nil
+	return []byte(rendered), nil
 }

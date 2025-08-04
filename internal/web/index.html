@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+ <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+ <title>Directory Tree</title>
+</head>
+	<body>
+	<style type="text/css">
+	%s
+ </style>
+	<table>
+		<tr>
+		  <th class="tree-column">Directory Tree</th>
+		  <th>Packange Dependecy Graph</th>
+		</tr>
+		<tr>
+		<td>
+		<div id="tree-container">
+%s
+	</div>
+	</td>
+  <td style="vertical-align:top;">
+	<div class="svg-container" id="svgContainer">
+	  	%s
+
+	</div>
+    <div class="zoom-controls">
+        <button id="resetZoom">Reset Zoom</button>
+        <button id="zoomIn">Zoom In (+)</button>
+        <button id="zoomOut">Zoom Out (-)</button>
+    </div>
+  </td>
+</tr>
+</table>
+<script>
+%s
+</script>
+</html>

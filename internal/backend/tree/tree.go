@@ -7,7 +7,6 @@ import (
 	"strings"
 )
 
-// TODO: pointer?
 // Node represents a file or directory in the tree
 type Node struct {
 	Name     string
@@ -19,8 +18,7 @@ type Node struct {
 
 // TODO: test
 
-// BuildTree recursively builds the directory tree
-// with only go files and contained them directories.
+// BuildTree recursively builds the directory tree.
 func BuildTree(path string, withHidden bool) (Node, error) {
 	info, err := os.Stat(path)
 	if err != nil {
