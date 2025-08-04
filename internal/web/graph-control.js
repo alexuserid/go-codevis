@@ -315,7 +315,7 @@ document.addEventListener('DOMContentLoaded', () => {
 		};
 	}
 
-    // TODO: remove this after native graph generate
+    // TODO: remove this after native graph generate (if it will ever happen)
     const nodes = document.getElementsByClassName("node")
     for (var i = 0; i < nodes.length; i++) {
         const node = nodes[i]

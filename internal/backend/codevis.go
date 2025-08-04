@@ -23,8 +23,18 @@ func Run() error {
 		return fmt.Errorf("check environment: %w", err)
 	}
 
+	currentDirTree, err := tree.BuildTree(".", false)
+	if err != nil {
+		return fmt.Errorf("build tree: %w", err)
+	}
+
+	mainRelativePath := findMainPath(currentDirTree)
+	if mainRelativePath == "" {
+		log.Printf("can't find 'main.go'. call visualisation is not available")
+	}
+
 	log.Println("build tree html")
-	treeHTML, err := buildTreeHTML()
+	treeHTML, err := buildTreeHTML(currentDirTree)
 	if err != nil {
 		return fmt.Errorf("build tree html: %w", err)
 	}
@@ -42,7 +52,7 @@ func Run() error {
 	}
 
 	log.Println("start go-callvis server")
-	err = launchGoCallvis()
+	err = launchGoCallvis(mainRelativePath)
 	if err != nil {
 		return fmt.Errorf("launch go-callvis: %w", err)
 	}
@@ -78,10 +88,10 @@ func checkEnvironment() error {
 	return nil
 }
 
-func launchGoCallvis() error {
+func launchGoCallvis(mainRelativePath string) error {
 	cmdGoCallvis := exec.CommandContext(context.Background(), "go-callvis")
 
-	cmdGoCallvis.Args = append(cmdGoCallvis.Args, "-group", "pkg,type", "-nostd", "-skipbrowser", "./")
+	cmdGoCallvis.Args = append(cmdGoCallvis.Args, "-group", "pkg,type", "-nostd", "-skipbrowser", "./"+mainRelativePath)
 	if cmdGoCallvis.Err != nil {
 		return fmt.Errorf("command go-callvis: %w", cmdGoCallvis.Err)
 	}
@@ -97,13 +107,8 @@ func launchGoCallvis() error {
 }
 
 // buildTreeHTML generates directory tree html.
-func buildTreeHTML() (string, error) {
-	currentDirTree, err := tree.BuildTree(".", false)
-	if err != nil {
-		return "", fmt.Errorf("build tree: %w", err)
-	}
-
-	data, err := TreeToHTML(currentDirTree)
+func buildTreeHTML(dirTree tree.Node) (string, error) {
+	data, err := TreeToHTML(dirTree)
 	if err != nil {
 		return "", fmt.Errorf("tree to html: %w", err)
 	}
@@ -163,4 +168,22 @@ func composeHTML(treeHTML string, graphHTML string) ([]byte, error) {
 	rendered := fmt.Sprintf(web.BasicHTML, web.Style, treeHTML, graphHTML, web.JS)
 
 	return []byte(rendered), nil
+}
+
+func findMainPath(dirTree tree.Node) string {
+	for _, child := range dirTree.Children {
+		if child.Name == "main.go" {
+			// Return parent path of main.go
+			return dirTree.Path
+		}
+
+		if child.IsDir {
+			p := findMainPath(child)
+			if p != "" {
+				return p
+			}
+		}
+	}
+
+	return ""
 }
