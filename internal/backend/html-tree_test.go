@@ -271,29 +271,29 @@ func TestWriteTagPrefixes(t *testing.T) {
 		Children: []DirNode{
 			{
 				Path:          "cmd",
-				TagTreePrefix: "├── ",
+				TagTreePrefix: "├─ ",
 				Children: []DirNode{
 					{
 						Path:          "cmd/app",
-						TagTreePrefix: "│   └── ",
+						TagTreePrefix: "│   └─ ",
 					},
 				},
 			},
 			{
 				Path:          "internal",
-				TagTreePrefix: "├── ",
+				TagTreePrefix: "├─ ",
 				Children: []DirNode{
 					{
 						Path:          "internal/worker",
-						TagTreePrefix: "│   ├── ",
+						TagTreePrefix: "│   ├─ ",
 					},
 					{
 						Path:          "internal/app",
-						TagTreePrefix: "│   └── ",
+						TagTreePrefix: "│   └─ ",
 						Children: []DirNode{
 							{
 								Path:          "internal/app/featureflag",
-								TagTreePrefix: "│      └── ",
+								TagTreePrefix: "│      └─ ",
 							},
 						},
 					},
@@ -301,11 +301,11 @@ func TestWriteTagPrefixes(t *testing.T) {
 			},
 			{
 				Path:          "pkg",
-				TagTreePrefix: "└── ",
+				TagTreePrefix: "└─ ",
 				Children: []DirNode{
 					{
 						Path:          "pkg/grpc",
-						TagTreePrefix: "   └── ",
+						TagTreePrefix: "   └─ ",
 					},
 				},
 			},
@@ -343,12 +343,12 @@ func TestTreeToList(t *testing.T) {
 			{
 				Name:          "cmd",
 				Path:          "cmd",
-				TagTreePrefix: "├── ",
+				TagTreePrefix: "├─ ",
 				Children: []DirNode{
 					{
 						Name:          "app",
 						Path:          "cmd/app",
-						TagTreePrefix: "│   └── ",
+						TagTreePrefix: "│   └─ ",
 						IsGoPackage:   true,
 					},
 				},
@@ -357,24 +357,24 @@ func TestTreeToList(t *testing.T) {
 				Name:          "internal",
 				Path:          "internal",
 				IsGoPackage:   true,
-				TagTreePrefix: "├── ",
+				TagTreePrefix: "├─ ",
 				Children: []DirNode{
 					{
 						Name:          "worker",
 						Path:          "internal/worker",
 						IsGoPackage:   true,
-						TagTreePrefix: "│   ├── ",
+						TagTreePrefix: "│   ├─ ",
 					},
 					{
 						Name:          "app",
 						Path:          "internal/app",
-						TagTreePrefix: "│   └── ",
+						TagTreePrefix: "│   └─ ",
 						Children: []DirNode{
 							{
 								Name:          "featureflag",
 								Path:          "internal/app/featureflag",
 								IsGoPackage:   true,
-								TagTreePrefix: "│      └── ",
+								TagTreePrefix: "│      └─ ",
 							},
 						},
 					},
@@ -383,13 +383,13 @@ func TestTreeToList(t *testing.T) {
 			{
 				Name:          "pkg",
 				Path:          "pkg",
-				TagTreePrefix: "└── ",
+				TagTreePrefix: "└─ ",
 				Children: []DirNode{
 					{
 						Name:          "grpc",
 						Path:          "pkg/grpc",
 						IsGoPackage:   true,
-						TagTreePrefix: "   └── ",
+						TagTreePrefix: "   └─ ",
 					},
 				},
 			},
@@ -406,49 +406,49 @@ func TestTreeToList(t *testing.T) {
 		{
 			ID:        "cmd",
 			Text:      "cmd",
-			TagPrefix: "├── ",
+			TagPrefix: "├─ ",
 			Class:     "nopkg",
 		},
 		{
 			ID:        "cmd/app",
 			Text:      "app",
-			TagPrefix: "│   └── ",
+			TagPrefix: "│   └─ ",
 			Class:     "gopkg",
 		},
 		{
 			ID:        "internal",
 			Text:      "internal",
-			TagPrefix: "├── ",
+			TagPrefix: "├─ ",
 			Class:     "gopkg",
 		},
 		{
 			ID:        "internal/worker",
 			Text:      "worker",
-			TagPrefix: "│   ├── ",
+			TagPrefix: "│   ├─ ",
 			Class:     "gopkg",
 		},
 		{
 			ID:        "internal/app",
 			Text:      "app",
-			TagPrefix: "│   └── ",
+			TagPrefix: "│   └─ ",
 			Class:     "nopkg",
 		},
 		{
 			ID:        "internal/app/featureflag",
 			Text:      "featureflag",
-			TagPrefix: "│      └── ",
+			TagPrefix: "│      └─ ",
 			Class:     "gopkg",
 		},
 		{
 			ID:        "pkg",
 			Text:      "pkg",
-			TagPrefix: "└── ",
+			TagPrefix: "└─ ",
 			Class:     "nopkg",
 		},
 		{
 			ID:        "pkg/grpc",
 			Text:      "grpc",
-			TagPrefix: "   └── ",
+			TagPrefix: "   └─ ",
 			Class:     "gopkg",
 		},
 	}
@@ -472,63 +472,63 @@ func TestHTMLTree(t *testing.T) {
 		{
 			ID:        "gitpub.com/username/tmp/cmd",
 			Text:      "cmd",
-			TagPrefix: "├── ",
+			TagPrefix: "├─ ",
 			Class:     "nopkg",
 		},
 		{
 			ID:        "gitpub.com/username/tmp/cmd/app",
 			Text:      "app",
-			TagPrefix: "│   └── ",
+			TagPrefix: "│   └─ ",
 			Class:     "gopkg",
 		},
 		{
 			ID:        "gitpub.com/username/tmp/internal",
 			Text:      "internal",
-			TagPrefix: "├── ",
+			TagPrefix: "├─ ",
 			Class:     "gopkg",
 		},
 		{
 			ID:        "gitpub.com/username/tmp/internal/worker",
 			Text:      "worker",
-			TagPrefix: "│   ├── ",
+			TagPrefix: "│   ├─ ",
 			Class:     "gopkg",
 		},
 		{
 			ID:        "gitpub.com/username/tmp/internal/app",
 			Text:      "app",
-			TagPrefix: "│   └── ",
+			TagPrefix: "│   └─ ",
 			Class:     "nopkg",
 		},
 		{
 			ID:        "gitpub.com/username/tmp/internal/app/featureflag",
 			Text:      "featureflag",
-			TagPrefix: "│      └── ",
+			TagPrefix: "│      └─ ",
 			Class:     "gopkg",
 		},
 		{
 			ID:        "gitpub.com/username/tmp/pkg",
 			Text:      "pkg",
-			TagPrefix: "└── ",
+			TagPrefix: "└─ ",
 			Class:     "nopkg",
 		},
 		{
 			ID:        "gitpub.com/username/tmp/pkg/grpc",
 			Text:      "grpc",
-			TagPrefix: "    └── ",
+			TagPrefix: "    └─ ",
 			Class:     "gopkg",
 		},
 	}
 
 	want := `
-	<span class="root" class="tree-entry" id="gitpub.com/username/tmp">gitpub.com/username/tmp</span><br>
-	├── <span class="nopkg" class="tree-entry" id="gitpub.com/username/tmp/cmd">cmd</span><br>
-	│   └── <span class="gopkg" class="tree-entry" id="gitpub.com/username/tmp/cmd/app">app</span><br>
-	├── <span class="gopkg" class="tree-entry" id="gitpub.com/username/tmp/internal">internal</span><br>
-	│   ├── <span class="gopkg" class="tree-entry" id="gitpub.com/username/tmp/internal/worker">worker</span><br>
-	│   └── <span class="nopkg" class="tree-entry" id="gitpub.com/username/tmp/internal/app">app</span><br>
-	│      └── <span class="gopkg" class="tree-entry" id="gitpub.com/username/tmp/internal/app/featureflag">featureflag</span><br>
-	└── <span class="nopkg" class="tree-entry" id="gitpub.com/username/tmp/pkg">pkg</span><br>
-	    └── <span class="gopkg" class="tree-entry" id="gitpub.com/username/tmp/pkg/grpc">grpc</span><br>
+	<span class="root tree-entry" id="gitpub.com/username/tmp">gitpub.com/username/tmp</span><br>
+	├─ <span class="nopkg tree-entry" id="gitpub.com/username/tmp/cmd">cmd</span><br>
+	│   └─ <span class="gopkg tree-entry" id="gitpub.com/username/tmp/cmd/app">app</span><br>
+	├─ <span class="gopkg tree-entry" id="gitpub.com/username/tmp/internal">internal</span><br>
+	│   ├─ <span class="gopkg tree-entry" id="gitpub.com/username/tmp/internal/worker">worker</span><br>
+	│   └─ <span class="nopkg tree-entry" id="gitpub.com/username/tmp/internal/app">app</span><br>
+	│      └─ <span class="gopkg tree-entry" id="gitpub.com/username/tmp/internal/app/featureflag">featureflag</span><br>
+	└─ <span class="nopkg tree-entry" id="gitpub.com/username/tmp/pkg">pkg</span><br>
+	    └─ <span class="gopkg tree-entry" id="gitpub.com/username/tmp/pkg/grpc">grpc</span><br>
 	`
 
 	// act

@@ -33,8 +33,8 @@ type HTMLNode struct {
 
 const (
 	connectNodesPrefix = "│   "
-	middleNodePrefix   = "├── "
-	lastNodePrefix     = "└── "
+	middleNodePrefix   = "├─ "
+	lastNodePrefix     = "└─ "
 	lastParentPrefix   = "   "
 )
 

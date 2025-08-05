@@ -1,5 +1,5 @@
 body {
-    font-family : monospace, sans-serif;
+    font-family: Times, monospace;
     color: black;
 }
 
@@ -14,14 +14,14 @@ table {
 
 .tree-column {
     white-space: nowrap; /* Do not wrap words, makes tree more readable */
-    overflow:auto; /* Allows to fit tree with scroll */
-    vertical-align:top; /* Needed to place content on top, not in the center of row */
+    overflow: auto; /* Allows to fit tree with scroll */
+    vertical-align: top; /* Needed to place content on top, not in the center of row */
 }
 
 .svg-container {
-  width: 75lvw;
-  height: 90lvh;
-  overflow: hidden; /* Hides graph scroll bar. All scrolling made using JS */
+    width: 75lvw;
+    height: 90lvh;
+    overflow: hidden; /* Hides graph scroll bar. All scrolling made using JS */
 }
 
 #tree-container {

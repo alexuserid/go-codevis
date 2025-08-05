@@ -151,9 +151,9 @@ const expectedTreeHTML = `
 			├── <a class="NORM" href="baseHREF./output.go">output.go</a><br>
 			└── <a class="NORM" href="baseHREF./version.go">version.go</a><br>
 		<br><br><p>
-		
+
 		5 directories, 28 files
-		
+
 		</p>
 			<hr>
 			<p class="VERSION">
@@ -172,7 +172,7 @@ const expectedTreeHTML = `
 
 // TODO: fix test
 func TestPasteDepsToHTML(t *testing.T) {
-	htmlPage, err := pasteDepsToHTML(inputTreeHTML, []byte("aaa"))
+	htmlPage, err := composeHTML(inputTreeHTML, "aaa")
 	assert.NoError(t, err)
 
 	want := expectedTreeHTML

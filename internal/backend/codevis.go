@@ -2,7 +2,6 @@ package backend
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,6 +12,7 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
+	callvis "github.com/alexuserid/go-callvis/origin"
 	"github.com/alexuserid/go-codevis/internal/backend/tree"
 	"github.com/alexuserid/go-codevis/internal/web"
 )
@@ -51,17 +51,16 @@ func Run() error {
 		return fmt.Errorf("compose html: %w", err)
 	}
 
-	log.Println("start go-callvis server")
-	err = launchGoCallvis(mainRelativePath)
-	if err != nil {
-		return fmt.Errorf("launch go-callvis: %w", err)
-	}
+	callvisHandler := hostGoCallvis(mainRelativePath)
 
-	log.Println("hosting. visit http://localhost:9798")
-	err = http.ListenAndServe(":9798", http.HandlerFunc(
+	http.Handle("/callvis", callvisHandler)
+	http.Handle("/", http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			w.Write(htmlPage)
 		}))
+
+	log.Println("hosting. visit http://localhost:9798")
+	err = http.ListenAndServe(":9798", nil)
 	if err != nil {
 		return fmt.Errorf("listen and serve: %w", err)
 	}
@@ -80,30 +79,17 @@ func checkEnvironment() error {
 		return fmt.Errorf("lookup 'dot' util, graphviz: %w", cmd.Err)
 	}
 
-	cmd = exec.CommandContext(context.Background(), "go-callvis")
-	if cmd.Err != nil {
-		return fmt.Errorf("lookup 'go-callvis' util https://github.com/ondrajz/go-callvis: %w", cmd.Err)
-	}
-
 	return nil
 }
 
-func launchGoCallvis(mainRelativePath string) error {
-	cmdGoCallvis := exec.CommandContext(context.Background(), "go-callvis")
+func hostGoCallvis(mainRelativePath string) http.Handler {
+	callvisCfg := callvis.DefaultConfig()
+	callvisCfg.MainPkgPath = "./" + mainRelativePath
+	callvisCfg.CallgraphAlgo = callvis.CallGraphTypeCha
 
-	cmdGoCallvis.Args = append(cmdGoCallvis.Args, "-group", "pkg,type", "-nostd", "-skipbrowser", "./"+mainRelativePath)
-	if cmdGoCallvis.Err != nil {
-		return fmt.Errorf("command go-callvis: %w", cmdGoCallvis.Err)
-	}
+	callvisAdapter := callvis.NewGoCodevisAdapter(callvisCfg)
 
-	cmdGoCallvis.Stdout = os.Stdout
-	cmdGoCallvis.Stderr = os.Stderr
-
-	err := cmdGoCallvis.Start()
-	if err != nil {
-		return fmt.Errorf("start go-callvis: %w", err)
-	}
-	return nil
+	return callvisAdapter.Handler()
 }
 
 // buildTreeHTML generates directory tree html.
