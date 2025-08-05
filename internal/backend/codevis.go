@@ -163,7 +163,10 @@ func findMainPath(dirTree tree.Node) string {
 			return dirTree.Path
 		}
 
-		if child.IsDir {
+		// TODO: fix this workaround
+		// string.Contains test - bad lifehack, but it allows not to go inside testdata packages,
+		// which may contain needless main.go.
+		if child.IsDir && !strings.Contains(child.Name, "test") {
 			p := findMainPath(child)
 			if p != "" {
 				return p

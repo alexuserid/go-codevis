@@ -30,3 +30,15 @@ table {
     height: 90lvh;
     overflow: auto;
 }
+
+.nodes-mark {
+    cursor: default;
+}
+
+.marked-node {
+    filter: drop-shadow(0 0 3px red);
+}
+
+.marked-edge {
+    filter: drop-shadow(0 0 1px red) drop-shadow(0 0 1px red);
+}

@@ -2,7 +2,7 @@ package web
 
 import _ "embed"
 
-//go:embed graph-control.js
+//go:embed script.js
 var JS string
 
 //go:embed style.css

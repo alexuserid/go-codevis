@@ -3,6 +3,103 @@ svgCnvs = document.getElementById("svg");
 svgCnvs.removeAttribute("width");
 svgCnvs.removeAttribute("height");
 
+class SVGMarker {
+  constructor(svgElement, options = {}) {
+    this.svg = svgElement;
+    this.marked = new Map(); // map[nodeID][]edgeID
+
+    this.init();
+  }
+
+  init() {
+    this.createMarkToggles();
+  }
+
+  createMarkToggles() {
+    const graphNodes = document.getElementsByClassName("node");
+    for (var i = 0; i < graphNodes.length; i++) {
+      const nodeID = graphNodes[i].id;
+
+      let textElements = graphNodes[i].getElementsByTagName("text");
+      if (textElements.length == 0) {
+        continue;
+      }
+
+      let markToggler = textElements[0].cloneNode(true);
+
+      let points = graphNodes[i].getElementsByTagName("polygon")[0].points[1];
+
+      markToggler.setAttribute("id", nodeID + "_mark");
+      markToggler.setAttribute("x", points.x);
+      markToggler.setAttribute("y", points.y);
+      markToggler.setAttribute("font-size", "12.00");
+      markToggler.setAttribute("class", "nodes-mark");
+      markToggler.innerHTML = "*";
+
+      markToggler.addEventListener("click", () => this.handleMark(markToggler));
+
+      graphNodes[i].appendChild(markToggler);
+    }
+  }
+
+  handleMark(markToggler) {
+    const graphNode = markToggler.parentElement;
+
+    if (this.markedNode(graphNode)) {
+      this.unsetMarks(graphNode);
+      return;
+    }
+
+    this.setMarks(graphNode);
+  }
+
+  markedNode(graphNode) {
+    return this.marked.has(graphNode.id);
+  }
+
+  setMarks(graphNode) {
+    graphNode.classList.add("marked-node");
+
+    let nodeEdges = this.findNodeEdges(graphNode);
+
+    for (var i = 0; i < nodeEdges.length; i++) {
+      document.getElementById(nodeEdges[i]).classList.add("marked-edge");
+    }
+
+    this.marked.set(graphNode.id, nodeEdges);
+  }
+
+  unsetMarks(graphNode) {
+    graphNode.classList.remove("marked-node");
+
+    const markedEdges = this.marked.get(graphNode.id);
+    for (var i = 0; i < markedEdges.length; i++) {
+      document.getElementById(markedEdges[i]).classList.remove("marked-edge");
+    }
+
+    this.marked.delete(graphNode.id);
+  }
+
+  findNodeEdges(graphNode) {
+    const nodeAbsPackagePath =
+      graphNode.getElementsByTagName("title")[0].innerHTML;
+
+    const edges = document.getElementsByClassName("edge");
+    let markedEdges = [];
+    for (var i = 0; i < edges.length; i++) {
+      const edgeAbsPackagePaths = edges[i]
+        .getElementsByTagName("title")[0]
+        .innerHTML.split(":e-&gt;");
+
+      if (edgeAbsPackagePaths.includes(nodeAbsPackagePath)) {
+        markedEdges.push(edges[i].id);
+      }
+    }
+
+    return markedEdges;
+  }
+}
+
 // This class allows to zoom in to graph node on tree element click.
 // it works almost good, but there's a lot of things to do:
 class SVGViewController {
@@ -283,11 +380,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // Init zoomer
   const svg = document.getElementById("svg");
   const container = document.getElementById("svgContainer");
-  const zoomController = new SVGViewController(svg, container, {
+  const viewController = new SVGViewController(svg, container, {
     zoomFactor: 1.5,
     zoomElementFactor: calculateZoomFactor(svg),
     animationDuration: 300,
   });
+
+  const svgMarker = new SVGMarker(svg, {});
 
   // TODO: refactor code below.
   const rootPkg = document
@@ -330,7 +429,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!graphNode) {
         return;
       }
-      zoomController.zoomToElement(graphNode);
+      viewController.zoomToElement(graphNode);
 
       const polygon = graphNode.getElementsByTagName("polygon")[0];
       polygon.setAttribute("fill", "#FACDEE");
