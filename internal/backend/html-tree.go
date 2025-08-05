@@ -14,7 +14,6 @@ import (
 	"github.com/alexuserid/go-codevis/internal/backend/tree"
 )
 
-// TODO: pointer?
 type DirNode struct {
 	Name          string
 	Path          string

@@ -27,10 +27,10 @@ class SVGMarker {
 
       let markToggler = textElements[0].cloneNode(true);
 
-      let points = graphNodes[i].getElementsByTagName("polygon")[0].points[1];
+      let points = graphNodes[i].getElementsByTagName("polygon")[0].points[3];
 
       markToggler.setAttribute("id", nodeID + "_mark");
-      markToggler.setAttribute("x", points.x);
+      markToggler.setAttribute("x", points.x - 10); // 10 is an empirical magic number
       markToggler.setAttribute("y", points.y);
       markToggler.setAttribute("font-size", "12.00");
       markToggler.setAttribute("class", "nodes-mark");
