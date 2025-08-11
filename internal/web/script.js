@@ -3,6 +3,8 @@ svgCnvs = document.getElementById("svg");
 svgCnvs.removeAttribute("width");
 svgCnvs.removeAttribute("height");
 
+// Classes
+
 class SVGMarker {
   constructor(svgElement, options = {}) {
     this.svg = svgElement;
@@ -20,30 +22,18 @@ class SVGMarker {
     for (var i = 0; i < graphNodes.length; i++) {
       const nodeID = graphNodes[i].id;
 
-      let textElements = graphNodes[i].getElementsByTagName("text");
-      if (textElements.length == 0) {
-        continue;
-      }
+      const link = graphNodes[i].getElementsByTagName("a");
+      // Remove click action
+      link[0].removeAttribute("xlink:href");
 
-      let markToggler = textElements[0].cloneNode(true);
-
-      let points = graphNodes[i].getElementsByTagName("polygon")[0].points[3];
-
-      markToggler.setAttribute("id", nodeID + "_mark");
-      markToggler.setAttribute("x", points.x - 10); // 10 is an empirical magic number
-      markToggler.setAttribute("y", points.y);
-      markToggler.setAttribute("font-size", "12.00");
-      markToggler.setAttribute("class", "nodes-mark");
-      markToggler.innerHTML = "*";
-
-      markToggler.addEventListener("click", () => this.handleMark(markToggler));
-
-      graphNodes[i].appendChild(markToggler);
+      // Add ability to mark
+      link[0].setAttribute("class", "nodes-mark");
+      link[0].addEventListener("click", () => this.handleMark(nodeID));
     }
   }
 
-  handleMark(markToggler) {
-    const graphNode = markToggler.parentElement;
+  handleMark(nodeID) {
+    const graphNode = document.getElementById(nodeID);
 
     if (this.markedNode(graphNode)) {
       this.unsetMarks(graphNode);
@@ -364,6 +354,54 @@ class SVGViewController {
   }
 }
 
+class CallvisIncluder {
+  constructor(options = {}) {
+    this.init();
+  }
+
+  init() {
+    const rootPkg = document
+      .getElementById("tree-container")
+      .getElementsByClassName("root")[0].id;
+
+    const graphNodes = document.getElementsByClassName("node");
+    for (var i = 0; i < graphNodes.length; i++) {
+      const nodeID = graphNodes[i].id;
+
+      let textElements = graphNodes[i].getElementsByTagName("text");
+      if (textElements.length == 0) {
+        continue;
+      }
+
+      let callvisEntry = textElements[0].cloneNode(true);
+
+      let points = graphNodes[i].getElementsByTagName("polygon")[0].points[3];
+
+      callvisEntry.setAttribute("id", nodeID + "_callvis");
+      callvisEntry.setAttribute("class", "callvis-entry");
+      callvisEntry.setAttribute("x", points.x - 10); // 10 is an empirical magic number
+      callvisEntry.setAttribute("y", points.y - 5); // 5 is an empirical magic number
+      callvisEntry.setAttribute("font-size", "12.00");
+      callvisEntry.innerHTML = "c";
+
+      const gopkgPath =
+        textElements[0].parentElement.getAttribute("xlink:title");
+      const callvisURL =
+        "http://localhost:9798/callvis?limit=" + rootPkg + "&f=" + gopkgPath;
+
+      callvisEntry.addEventListener("click", () =>
+        this.callvisCall(callvisURL),
+      );
+
+      graphNodes[i].appendChild(callvisEntry);
+    }
+  }
+
+  callvisCall(callvisURL) {
+    window.open(callvisURL, "_blank");
+  }
+}
+
 // Need to zoom to the same scale for any svg size.
 function calculateZoomFactor(svg) {
   const svgWidth = svg.getBBox().width;
@@ -386,12 +424,11 @@ document.addEventListener("DOMContentLoaded", () => {
     animationDuration: 300,
   });
 
-  const svgMarker = new SVGMarker(svg, {});
+  new CallvisIncluder();
+
+  new SVGMarker(svg, {});
 
   // TODO: refactor code below.
-  const rootPkg = document
-    .getElementById("tree-container")
-    .getElementsByClassName("root")[0].id;
 
   // Gather all graph nodes to match them with tree nodes.
   var graphNodes = document.querySelectorAll('g[class="node"]');
@@ -442,19 +479,5 @@ document.addEventListener("DOMContentLoaded", () => {
         text.setAttribute("font-size", 10);
       }, "3000");
     };
-  }
-
-  // TODO: remove this after native graph generate (if it will ever happen)
-  const nodes = document.getElementsByClassName("node");
-  for (var i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
-    const link = node.getElementsByTagName("a");
-
-    // Click action leads to go-callvis page
-    const gopkgPath = link[0].getAttribute("xlink:title");
-    link[0].setAttribute(
-      "xlink:href",
-      "http://localhost:9798/callvis?limit=" + rootPkg + "&f=" + gopkgPath,
-    );
   }
 });

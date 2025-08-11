@@ -3,7 +3,7 @@ module github.com/alexuserid/go-codevis
 go 1.24.5
 
 require (
-	github.com/alexuserid/go-callvis v0.0.0-20250805142534-ca5808f62622
+	github.com/alexuserid/go-callvis v0.0.0-20250811162027-cb600e1f78ca
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/text v0.27.0
 )

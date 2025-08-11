@@ -28,11 +28,6 @@ func Run() error {
 		return fmt.Errorf("build tree: %w", err)
 	}
 
-	mainRelativePath := findMainPath(currentDirTree)
-	if mainRelativePath == "" {
-		log.Printf("can't find 'main.go'. call visualisation is not available")
-	}
-
 	log.Println("build tree html")
 	treeHTML, err := buildTreeHTML(currentDirTree)
 	if err != nil {
@@ -51,9 +46,14 @@ func Run() error {
 		return fmt.Errorf("compose html: %w", err)
 	}
 
-	callvisHandler := hostGoCallvis(mainRelativePath)
+	callvisHandler, err := goCallvisHandler(currentDirTree)
+	if err != nil {
+		log.Println("do not use go-callvis. failed to get go-callvis handler: ", err)
+	}
 
-	http.Handle("/callvis", callvisHandler)
+	if callvisHandler != nil {
+		http.Handle("/callvis", callvisHandler)
+	}
 	http.Handle("/", http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			w.Write(htmlPage)
@@ -82,14 +82,22 @@ func checkEnvironment() error {
 	return nil
 }
 
-func hostGoCallvis(mainRelativePath string) http.Handler {
+func goCallvisHandler(currentDirTree tree.Node) (http.Handler, error) {
+	mainRelativePath := findMainPath(currentDirTree)
+	if mainRelativePath == "" {
+		return nil, fmt.Errorf("didn't find path to main.go")
+	}
+
 	callvisCfg := callvis.DefaultConfig()
 	callvisCfg.MainPkgPath = "./" + mainRelativePath
 	callvisCfg.CallgraphAlgo = callvis.CallGraphTypeCha
 
-	callvisAdapter := callvis.NewGoCodevisAdapter(callvisCfg)
+	callvisAdapter, err := callvis.NewGoCodevisAdapter(callvisCfg)
+	if err != nil {
+		return nil, fmt.Errorf("new go-callvis adapter: %w", err)
+	}
 
-	return callvisAdapter.Handler()
+	return callvisAdapter.Handler(), nil
 }
 
 // buildTreeHTML generates directory tree html.

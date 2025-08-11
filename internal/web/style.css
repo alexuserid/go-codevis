@@ -32,7 +32,7 @@ table {
 }
 
 .nodes-mark {
-    cursor: default;
+    cursor: pointer;
 }
 
 .marked-node {
@@ -41,4 +41,8 @@ table {
 
 .marked-edge {
     filter: drop-shadow(0 0 1px red) drop-shadow(0 0 1px red);
+}
+
+.callvis-entry {
+    cursor: pointer;
 }
