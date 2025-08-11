@@ -472,11 +472,9 @@ document.addEventListener("DOMContentLoaded", () => {
       polygon.setAttribute("fill", "#FACDEE");
 
       const text = graphNode.getElementsByTagName("text")[0];
-      text.setAttribute("font-size", 14);
 
       setTimeout(() => {
         polygon.setAttribute("fill", "none");
-        text.setAttribute("font-size", 10);
       }, "3000");
     };
   }
