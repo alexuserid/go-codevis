@@ -1,12 +1,9 @@
 package backend
 
 import (
-	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
-	"io"
-	"os"
 	"sort"
 	"strings"
 	"text/template"
@@ -44,7 +41,7 @@ var ErrNoModuleDirective = errors.New("didn't find 'module' directive in 'go.mod
 // - other?
 
 func TreeToHTML(inputTree tree.Node) ([]byte, error) {
-	modulePath, err := getModulePath()
+	modulePath, err := getModulePath(inputTree)
 	if err != nil {
 		return nil, fmt.Errorf("get module path: %w", err)
 	}
@@ -73,31 +70,8 @@ func TreeToHTML(inputTree tree.Node) ([]byte, error) {
 	return htmlData, nil
 }
 
-func getModulePath() (string, error) {
-	goModPath := "go.mod"
-	f, err := os.Open(goModPath)
-	if err != nil {
-		return "", fmt.Errorf("open file '%s': %w", goModPath, err)
-	}
-	defer f.Close()
-
-	r := bufio.NewReader(f)
-
-	module := []byte("module ")
-	for {
-		line, _, err := r.ReadLine()
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				return "", ErrNoModuleDirective
-			}
-			return "", fmt.Errorf("read file '%s': %w", goModPath, err)
-		}
-
-		if bytes.HasPrefix(line, module) {
-			result, _ := bytes.CutPrefix(line, module)
-			return string(result), nil
-		}
-	}
+func getModulePath(inputTree tree.Node) (string, error) {
+	return inputTree.AbsPath, nil
 }
 
 func goDirectories(inputTree tree.Node) (DirNode, bool) {

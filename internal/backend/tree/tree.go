@@ -11,6 +11,7 @@ import (
 type Node struct {
 	Name     string
 	Path     string
+	AbsPath  string
 	IsDir    bool
 	Children []Node
 	Size     int64
@@ -25,10 +26,16 @@ func BuildTree(path string, withHidden bool) (Node, error) {
 		return Node{}, fmt.Errorf("os stat: %w", err)
 	}
 
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return Node{}, fmt.Errorf("absolute path: %w", err)
+	}
+
 	node := Node{
-		Name:  info.Name(),
-		Path:  path,
-		IsDir: info.IsDir(),
+		Name:    info.Name(),
+		Path:    path,
+		AbsPath: absPath,
+		IsDir:   info.IsDir(),
 	}
 
 	if info.IsDir() {
