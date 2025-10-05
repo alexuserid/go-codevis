@@ -1,7 +1,7 @@
 package backend
 
 import (
-	"bytes"
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -15,9 +15,12 @@ import (
 	callvis "github.com/alexuserid/go-callvis/origin"
 	"github.com/alexuserid/go-codevis/internal/backend/tree"
 	"github.com/alexuserid/go-codevis/internal/web"
+	"github.com/alexuserid/goda/pubgraph"
 )
 
 func Run() error {
+	ctx := context.Background()
+
 	log.Println("check environment")
 	if err := checkEnvironment(); err != nil {
 		return fmt.Errorf("check environment: %w", err)
@@ -35,7 +38,7 @@ func Run() error {
 	}
 
 	log.Println("build deps graph")
-	depsGraph, err := buildDepsGraph()
+	depsGraph, err := buildDepsGraph(ctx)
 	if err != nil {
 		return fmt.Errorf("build dependency graph: %w", err)
 	}
@@ -69,12 +72,7 @@ func Run() error {
 }
 
 func checkEnvironment() error {
-	cmd := exec.Command("goda")
-	if cmd.Err != nil {
-		return fmt.Errorf("lookup 'goda' util https://github.com/loov/goda: %w", cmd.Err)
-	}
-
-	cmd = exec.Command("dot")
+	cmd := exec.Command("dot")
 	if cmd.Err != nil {
 		return fmt.Errorf("lookup 'dot' util, graphviz: %w", cmd.Err)
 	}
@@ -110,21 +108,14 @@ func buildTreeHTML(dirTree tree.Node) (string, error) {
 	return string(data), nil
 }
 
-func buildDepsGraph() (string, error) {
+func buildDepsGraph(ctx context.Context) (string, error) {
 	log.Println("gather dependencies")
-	cmdGoda := exec.Command("goda")
-	if cmdGoda.Err != nil {
-		return "", fmt.Errorf("command goda: %w", cmdGoda.Err)
-	}
 
-	cmdGoda.Args = append(cmdGoda.Args, "graph", "-cluster", "-short", "./...:mod")
-
-	b, err := cmdGoda.Output()
+	godaConfig := pubgraph.DefaultConfig()
+	err := pubgraph.ExecuteGraph(ctx, &godaConfig)
 	if err != nil {
-		return "", fmt.Errorf("goda output: %w", err)
+		return "", fmt.Errorf("execute graph: %w", err)
 	}
-
-	buf := bytes.NewBuffer(b)
 
 	log.Println("generate dependency graph")
 	cmdGraphviz := exec.Command("dot")
@@ -133,7 +124,7 @@ func buildDepsGraph() (string, error) {
 	}
 
 	cmdGraphviz.Args = append(cmdGraphviz.Args, "-T", "svg")
-	cmdGraphviz.Stdin = buf
+	cmdGraphviz.Stdin = godaConfig.Out
 	cmdGraphviz.Stderr = os.Stderr
 
 	image, err := cmdGraphviz.Output()
